@@ -1,26 +1,22 @@
-from example import colebrook
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plot
+import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
 from tqdm.auto import tqdm
 
 # Constants (Assuming water @ 20°C)
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
-DENSITY = 998 # UNITS: kg/m^3 {M/L^3}
-VISCOSITY = 1.002e-3 #UNITS: kg/(m*s) {M/(L*T)}
-ROUGHNESS = 0.0025 # UNITS: N/A
-MINOR_LOSS_FACTOR = 1 #not sure
+DENSITY = 998.23 # UNITS: kg/m^3 {M/L^3}
+VISCOSITY = 1.0005e-3 #UNITS: kg/(m*s) {M/(L*T)}
+ROUGHNESS = 0.0025 / 1000 # UNITS: m
 SIN_THETA = 1 / 150
 
 # Tube Dimensions
 TUBE_DIAMETER = 0.00794 # UNITS: m {L}
-TUBE_LENGTHS_WITH_T_BOOLS = [(0.1, False), (0.2, True), (0.4, True)] # UNITS: m {L}
+TUBE_LENGTHS_WITH_T_BOOLS = [(0.1, False), (0.2, False), (0.4, False), (0.6, False)] # UNITS: m {L}
 TUBE_AREA = (TUBE_DIAMETER / 2)**2 * np.pi # UNITS: m^2 {L^2}
 TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
-
-
 
 # Box Dimensions
 BOX_AREA = 0.0832 # UNITS: m^2 {L^2} - Length=0.32, Width=0.26
@@ -38,7 +34,6 @@ K_TJOINT = 1 + 0.075
 # Time Increment
 TIME_INCREMENT = 0.001 #Decide on this
 
-
 # Get Methods
 def get_change_in_height(v2):
     return v2 * TIME_INCREMENT * TUBE_AREA / BOX_AREA
@@ -46,7 +41,7 @@ def get_change_in_height(v2):
 def get_v2_velocity(relative_height, tube_length, v1, k, friction):
     # Transform Bernoulli to solve for v2
     return np.sqrt((2 * GRAVITY * relative_height + v1 ** 2) / # numerator
-                    (k / GRAVITY + tube_length * friction /(GRAVITY * TUBE_DIAMETER) + 1) #denomiator 
+                    (1 + k / GRAVITY + friction * tube_length /(GRAVITY * TUBE_DIAMETER)) #denomiator 
                 )
 
 def get_v1_velocity(v2):
@@ -61,15 +56,16 @@ def get_tube_volume(tube_length):
 def get_box_volume():
     return BOX_TOTAL_VOLUME
 
-def get_friction_coefficient(v2, tube_length, tube_area, tube_diameter): # Need to work on
+def colebrook(f, reynolds_number):
+    return 1 / math.sqrt(f) + 2 * math.log(ROUGHNESS / (3.7 * 4 * TUBE_AREA/TUBE_WETTED_PERIMETER) + 2.51 / (reynolds_number * math.sqrt(f)), 10)
+
+def get_friction_coefficient(v2, tube_length): # Need to work on
     reynolds_number = get_reynolds_number(v2, tube_length)
 
     if reynolds_number < 2300:
         return 64/reynolds_number
     else:
-        colebrook = 1 / -2 * math.log(ROUGHNESS/(3.7*4*TUBE_AREA/TUBE_WETTED_PERIMETER) + 2.51/(reynolds_number*math.sqrt(f)))
-        1 / math.sqrt(f_coeff) + 2 * math.log(ROUGHNESS / 3.7 + 2.51 / (Re * math.sqrt(f_coeff)), 10)
-        return 
+        return fsolve(colebrook, 0.05, reynolds_number)[0]
     return
 
 def get_starting_relative_height(tube_length):
@@ -83,25 +79,24 @@ def run_experiment():
     for tube_length_with_t_bool in TUBE_LENGTHS_WITH_T_BOOLS:
         
         tube_length = tube_length_with_t_bool[0]
-        K = K_ENTRY if not tube_length_with_t_bool[1] else K_ENTRY + K_TJOINT
+        k = K_ENTRY if not tube_length_with_t_bool[1] else K_ENTRY + K_TJOINT
         water_height = 0.1
         total_time = 0
         v1 = 0
+        friction_coeff = 1 # friction is assumed to be infinite at start
 
-        while water_height >= 0.02: 
-            v2 = get_v2_velocity(water_height, tube_length) # need to update parameters
+        while water_height >= END_HEIGHT:
+            v2 = get_v2_velocity(water_height, tube_length, v1, k, friction_coeff) # need to update parameters
             friction_coeff = get_friction_coefficient(v2, tube_length, TUBE_AREA, TUBE_DIAMETER)
             water_height -= get_change_in_height(v2)
             v1 = get_v1_velocity(v2)
-
             total_time += TIME_INCREMENT
-            cur_v2 = get_v2_velocity()
-
-
-
+        
+        print(total_time)
+            
 # Plot Diagram Method
 def plot_diagram():
     return
 
 if __name__ == "__main__":
-    calculate_height()
+    run_experiment()
