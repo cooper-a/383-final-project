@@ -1,3 +1,4 @@
+from example import colebrook
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plot
@@ -9,14 +10,17 @@ from tqdm.auto import tqdm
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
 DENSITY = 998 # UNITS: kg/m^3 {M/L^3}
 VISCOSITY = 1.002e-3 #UNITS: kg/(m*s) {M/(L*T)}
-ROUGHNESS = 0.0015 # UNITS: N/A
+ROUGHNESS = 0.0025 # UNITS: N/A
 MINOR_LOSS_FACTOR = 1 #not sure
 SIN_THETA = 1 / 150
 
 # Tube Dimensions
 TUBE_DIAMETER = 0.00794 # UNITS: m {L}
-TUBE_LENGTHS = [0.2, 0.3, 0.4, 0.4] # UNITS: m {L}
+TUBE_LENGTHS_WITH_T_BOOLS = [(0.1, False), (0.2, True), (0.4, True)] # UNITS: m {L}
 TUBE_AREA = (TUBE_DIAMETER / 2)**2 * np.pi # UNITS: m^2 {L^2}
+TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
+
+
 
 # Box Dimensions
 BOX_AREA = 0.0832 # UNITS: m^2 {L^2} - Length=0.32, Width=0.26
@@ -28,7 +32,6 @@ END_HEIGHT = 0.02 # UNITS: m {L}
 TOTAL_HEIGHT_DOWN = 0.08 # UNITS: m {L}
 
 # Losses
-# ROUGHNESS =  # WHERE DO WE FIND THIS ????
 K_ENTRY = 0.5 
 K_TJOINT = 1 + 0.075
 
@@ -46,6 +49,9 @@ def get_v2_velocity(relative_height, tube_length, v1, k, friction):
                     (k / GRAVITY + tube_length * friction /(GRAVITY * TUBE_DIAMETER) + 1) #denomiator 
                 )
 
+def get_v1_velocity(v2):
+    return ((v2 * TUBE_AREA) / BOX_AREA)
+
 def get_pipe_surface_area():
     return TUBE_DIAMETER ** 2 / 4 * np.pi
 
@@ -57,7 +63,13 @@ def get_box_volume():
 
 def get_friction_coefficient(v2, tube_length, tube_area, tube_diameter): # Need to work on
     reynolds_number = get_reynolds_number(v2, tube_length)
-    # get
+
+    if reynolds_number < 2300:
+        return 64/reynolds_number
+    else:
+        colebrook = 1 / -2 * math.log(ROUGHNESS/(3.7*4*TUBE_AREA/TUBE_WETTED_PERIMETER) + 2.51/(reynolds_number*math.sqrt(f)))
+        1 / math.sqrt(f_coeff) + 2 * math.log(ROUGHNESS / 3.7 + 2.51 / (Re * math.sqrt(f_coeff)), 10)
+        return 
     return
 
 def get_starting_relative_height(tube_length):
@@ -68,16 +80,24 @@ def get_reynolds_number(v2, tube_length):
     
 # Run Experiment Method 
 def run_experiment():
-    water_height = 0.1
+    for tube_length_with_t_bool in TUBE_LENGTHS_WITH_T_BOOLS:
+        
+        tube_length = tube_length_with_t_bool[0]
+        K = K_ENTRY if not tube_length_with_t_bool[1] else K_ENTRY + K_TJOINT
+        water_height = 0.1
+        total_time = 0
+        v1 = 0
 
-    tube_length = TUBE_LENGTHS[0] # CHANGE THIS LATER!!
+        while water_height >= 0.02: 
+            v2 = get_v2_velocity(water_height, tube_length) # need to update parameters
+            friction_coeff = get_friction_coefficient(v2, tube_length, TUBE_AREA, TUBE_DIAMETER)
+            water_height -= get_change_in_height(v2)
+            v1 = get_v1_velocity(v2)
 
-    while water_height > 0.02: 
-        v2 = get_v2_velocity(water_height, tube_length)
-        friction_coeff = get_friction_coefficient(v2, tube_length, TUBE_AREA, TUBE_DIAMETER)
-        water_height =- get_change_in_height(water_height, tube_length, v1, k, get_friction_coefficient())
+            total_time += TIME_INCREMENT
+            cur_v2 = get_v2_velocity()
 
-        cur_v2 = calculate_v2_velocity()
+
 
 # Plot Diagram Method
 def plot_diagram():
