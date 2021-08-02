@@ -6,15 +6,13 @@ from loader import Loader
 # Constants (Assuming water @ 20°C)
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
 DENSITY = 998.23 # UNITS: kg/m^3 {M/L^3}
-VISCOSITY = 1.0005e-3 #UNITS: kg/(m*s) {M/(L*T)}
-# ROUGHNESS = 0.0025 / 1000 # UNITS: m
-# Using this roughness value provides really good predictions
-ROUGHNESS = 0.00015 # UNITS: m
+VISCOSITY = 1.003e-3 #UNITS: kg/(m*s) {M/(L*T)}
+ROUGHNESS = 0.0025 / 1000 # UNITS: m
 SIN_THETA = 1 / 150
 
 # Tube Dimensions
 TUBE_DIAMETER = 0.00794 # UNITS: m {L}
-TUBE_LENGTHS_WITH_T_BOOLS = [(0.1, False), (0.2, False), (0.4, False), (0.6, False)] # UNITS: m {L}
+TUBE_LENGTHS_WITH_T_BOOLS = [(0.2, False), (0.3, False), (0.4, False), (0.6, False)] # UNITS: m {L}
 TUBE_AREA = (TUBE_DIAMETER / 2)**2 * np.pi # UNITS: m^2 {L^2}
 TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
 
@@ -43,7 +41,7 @@ def get_change_in_height(v2):
 def get_v2_velocity(relative_height, tube_length, v1, k, friction):
     # Transform Bernoulli to solve for v2
     return np.sqrt((2 * GRAVITY * relative_height + v1 ** 2) / # numerator
-                    (1 + k + friction * tube_length / (4 * TUBE_AREA/TUBE_WETTED_PERIMETER)) #denomiator 
+                    (1 + k + friction * tube_length / (4 * TUBE_AREA/TUBE_WETTED_PERIMETER)) #denomiator
                 )
 
 def get_v1_velocity(v2):
@@ -52,19 +50,18 @@ def get_v1_velocity(v2):
 def colebrook(f, reynolds_number):
     return 1 / math.sqrt(f) + 2 * math.log(ROUGHNESS / (3.7 * 4 * TUBE_AREA/TUBE_WETTED_PERIMETER) + 2.51 / (reynolds_number * math.sqrt(f)), 10)
 
-def get_friction_coefficient(v2, tube_length): # Need to work on
-    reynolds_number = get_reynolds_number(v2, tube_length)
-
+def get_friction_coefficient(v2): # Need to work on
+    reynolds_number = get_reynolds_number(v2)
     if reynolds_number < 2300:
         return 64/reynolds_number
     else:
-        return fsolve(colebrook, 0.01, reynolds_number)[0]
+        return fsolve(colebrook, 0.002, reynolds_number)[0]
 
 def get_starting_relative_height(tube_length):
     return tube_length * SIN_THETA + (END_HEIGHT + TOTAL_HEIGHT_DOWN)
 
-def get_reynolds_number(v2, tube_length):
-    return (DENSITY * v2 * tube_length) / VISCOSITY
+def get_reynolds_number(v2):
+    return (DENSITY * v2 * TUBE_DIAMETER) / VISCOSITY
     
 # Run Experiment Method 
 def run_experiment():
@@ -79,7 +76,7 @@ def run_experiment():
         with Loader("Water is draining..."):
             while water_height >= (END_HEIGHT + tube_length * SIN_THETA):
                 v2 = get_v2_velocity(water_height, tube_length, v1, k, friction_coeff) # need to update parameters
-                friction_coeff = get_friction_coefficient(v2, tube_length)
+                friction_coeff = get_friction_coefficient(v2)
                 water_height -= get_change_in_height(v2)
                 v1 = get_v1_velocity(v2)
                 total_time += TIME_INCREMENT
