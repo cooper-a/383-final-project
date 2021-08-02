@@ -1,10 +1,7 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
 from loader import Loader
-from tqdm import tqdm
 
 # Constants (Assuming water @ 20°C)
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
@@ -23,8 +20,6 @@ TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
 
 # Box Dimensions
 BOX_AREA = 0.0832 # UNITS: m^2 {L^2} - Length=0.32, Width=0.26
-# BOX_TOTAL_HEIGHT = 0.1 # UNITS: m {L}
-# BOX_TOTAL_VOLUME = BOX_AREA * BOX_TOTAL_HEIGHT # UNITS: m^3 {L^3}
 
 # Heights
 END_HEIGHT = 0.02 # UNITS: m {L}
