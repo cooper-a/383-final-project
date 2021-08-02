@@ -3,13 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
-from tqdm.auto import tqdm
+from loader import Loader
+from tqdm import tqdm
 
 # Constants (Assuming water @ 20°C)
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
 DENSITY = 998.23 # UNITS: kg/m^3 {M/L^3}
 VISCOSITY = 1.0005e-3 #UNITS: kg/(m*s) {M/(L*T)}
-ROUGHNESS = 0.0025 / 1000 # UNITS: m
+# ROUGHNESS = 0.0025 / 1000 # UNITS: m
+# Using this roughness value provides really good predictions
+ROUGHNESS = 0.00015 # UNITS: m
 SIN_THETA = 1 / 150
 
 # Tube Dimensions
@@ -33,6 +36,10 @@ K_TJOINT = 1 + 0.075
 
 # Time Increment
 TIME_INCREMENT = 0.001 #Decide on this
+
+# Experimental Results
+
+EXPERIMENTAL_RESULTS = [199, 214, 266, 288]
 
 # Get Methods
 def get_change_in_height(v2):
@@ -66,7 +73,7 @@ def get_reynolds_number(v2, tube_length):
     
 # Run Experiment Method 
 def run_experiment():
-    for tube_length_with_t_bool in TUBE_LENGTHS_WITH_T_BOOLS:
+    for tube_length_with_t_bool, experimental_time in zip(TUBE_LENGTHS_WITH_T_BOOLS, EXPERIMENTAL_RESULTS):
         
         tube_length = tube_length_with_t_bool[0]
         k = K_ENTRY if not tube_length_with_t_bool[1] else K_ENTRY + K_TJOINT
@@ -74,16 +81,17 @@ def run_experiment():
         total_time = 0
         v1 = 0
         friction_coeff = 1 # friction is assumed to be infinite at start
+        with Loader("Water is draining..."):
+            while water_height >= (END_HEIGHT + tube_length * SIN_THETA):
+                v2 = get_v2_velocity(water_height, tube_length, v1, k, friction_coeff) # need to update parameters
+                friction_coeff = get_friction_coefficient(v2, tube_length)
+                water_height -= get_change_in_height(v2)
+                v1 = get_v1_velocity(v2)
+                total_time += TIME_INCREMENT
 
-        while water_height >= (END_HEIGHT + tube_length * SIN_THETA):
-            v2 = get_v2_velocity(water_height, tube_length, v1, k, friction_coeff) # need to update parameters
-            friction_coeff = get_friction_coefficient(v2, tube_length)
-            water_height -= get_change_in_height(v2)
-            v1 = get_v1_velocity(v2)
-            total_time += TIME_INCREMENT
-        
-        print(total_time)
-            
+        print(f"Predicted time for length of {tube_length * 100}cm is: {total_time:.2f}s")
+        print(f"The percent error between predicted and experimental result is {abs((total_time - experimental_time) / experimental_time) * 100:.2f}%")
+
 # Plot Diagram Method
 def plot_diagram():
     return
