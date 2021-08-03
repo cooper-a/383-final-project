@@ -14,7 +14,7 @@ SIN_THETA = 1 / 150
 
 # Tube Dimensions
 TUBE_DIAMETER = 0.00794 # UNITS: m {L}
-TUBE_LENGTHS_WITH_T_BOOLS = [(0.2, False), (0.3, True), (0.4, True), (0.6, True)] # UNITS: m {L}
+TUBE_LENGTHS_WITH_T_BOOLS = [(0.1, False), (0.2, True), (0.4, True)] # UNITS: m {L}
 TUBE_AREA = (TUBE_DIAMETER / 2)**2 * np.pi # UNITS: m^2 {L^2}
 TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
 
@@ -113,7 +113,7 @@ def run_experiment():
         df_obj = [df, tube_length, tube_length_with_t_bool[1]]
         frames.append(df_obj)
         print(f"Predicted time for length of {tube_length * 100}cm is: {total_time:.2f}s")
-        print(f"The percent error between predicted and experimental result is {abs((total_time - experimental_time) / experimental_time) * 100:.2f}%")
+        # print(f"The percent error between predicted and experimental result is {abs((total_time - experimental_time) / experimental_time) * 100:.2f}%")
     plot_height_over_time(frames)
 
 

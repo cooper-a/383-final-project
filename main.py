@@ -5,14 +5,14 @@ from loader import Loader
 
 # Constants (Assuming water @ 20°C)
 GRAVITY = 9.81 # UNITS: m/s^2 {L/T^2}
-DENSITY = 998.23 # UNITS: kg/m^3 {M/L^3}
+DENSITY = 998 # UNITS: kg/m^3 {M/L^3}
 VISCOSITY = 1.003e-3 #UNITS: kg/(m*s) {M/(L*T)}
 ROUGHNESS = 0.0025 / 1000 # UNITS: m
 SIN_THETA = 1 / 150
 
 # Tube Dimensions
 TUBE_DIAMETER = 0.00794 # UNITS: m {L}
-TUBE_LENGTHS_WITH_T_BOOLS = [(0.2, False), (0.3, True), (0.4, True), (0.6, True)] # UNITS: m {L}
+TUBE_LENGTHS_WITH_T_BOOLS = [(0.2, False), (0.3, False), (0.4, False),(0.6, False)] # UNITS: m {L}
 TUBE_AREA = (TUBE_DIAMETER / 2)**2 * np.pi # UNITS: m^2 {L^2}
 TUBE_WETTED_PERIMETER = 2 * np.pi * TUBE_DIAMETER / 2
 
